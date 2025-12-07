@@ -1,0 +1,7 @@
+outputs/
+demo_data/
+datasets/
+datasets_preprocessed/
+gr00t.egg-info/
+wandb/
+=0.26.0
