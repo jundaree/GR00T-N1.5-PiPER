@@ -772,7 +772,7 @@ class AgibotGenie1DataConfig(BaseDataConfig):
 
 ###########################################################################################
 
-class PiperDataConfig(BaseDataConfig):
+class PiperMujocoDataConfig(BaseDataConfig):
     video_keys = ["video.side_cam_rgb","video.top_cam_rgb"]
     state_keys = [
         "state.single_arm",
@@ -825,6 +825,62 @@ class PiperDataConfig(BaseDataConfig):
         ]
         return ComposedModalityTransform(transforms=transforms)
 
+
+
+class PiperRealDataConfig(BaseDataConfig):
+    video_keys = ["video.logi_rgb","video.rs_rgb"]
+    state_keys = [
+        "state.single_arm",
+        "state.gripper",
+    ]
+    action_keys = [
+        "action.single_arm",
+        "action.gripper",
+    ]
+    language_keys = ["annotation.human.action.task_description"]
+    observation_indices = [0]
+    action_indices = list(range(16))
+
+    def transform(self) -> ModalityTransform:
+        transforms = [
+            # video transforms
+            VideoToTensor(apply_to=self.video_keys),
+            VideoCrop(apply_to=self.video_keys, scale=0.95),
+            VideoResize(apply_to=self.video_keys, height=224, width=224, interpolation="linear"),
+            VideoColorJitter(
+                apply_to=self.video_keys,
+                brightness=0.3,
+                contrast=0.4,
+                saturation=0.5,
+                hue=0.08,
+            ),
+            VideoToNumpy(apply_to=self.video_keys),
+            # state transforms
+            StateActionToTensor(apply_to=self.state_keys),
+            StateActionSinCosTransform(apply_to=self.state_keys),
+            # action transforms
+            StateActionToTensor(apply_to=self.action_keys),
+            StateActionTransform(
+                apply_to=self.action_keys,
+                normalization_modes={key: "min_max" for key in self.action_keys},
+            ),
+            # concat transforms
+            ConcatTransform(
+                video_concat_order=self.video_keys,
+                state_concat_order=self.state_keys,
+                action_concat_order=self.action_keys,
+            ),
+            # model-specific transform
+            GR00TTransform(
+                state_horizon=len(self.observation_indices),
+                action_horizon=len(self.action_indices),
+                max_state_dim=64,
+                max_action_dim=32,
+            ),
+        ]
+        return ComposedModalityTransform(transforms=transforms)
+
+
 DATA_CONFIG_MAP = {
     "fourier_gr1_arms_waist": FourierGr1ArmsWaistDataConfig(),
     "fourier_gr1_arms_only": FourierGr1ArmsOnlyDataConfig(),
@@ -838,5 +894,6 @@ DATA_CONFIG_MAP = {
     "unitree_g1_full_body": UnitreeG1FullBodyDataConfig(),
     "oxe_droid": OxeDroidDataConfig(),
     "agibot_genie1": AgibotGenie1DataConfig(),
-    "piper":PiperDataConfig(),
+    "piper_mujoco":PiperMujocoDataConfig(),
+    "piper_real":PiperRealDataConfig(),
 }

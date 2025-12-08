@@ -1,70 +1,39 @@
-Server Container
+# MP4 Overview (Junhyun Kim)
 
-docker build -t arm-gr00t-train .
-docker run -v /home/junhyun/arm/datasets:/workspace/datasets \
---name arm-gr00t-train \
---gpus all \
---shm-size="8g" \
--it arm-gr00t-train
+This project preprocesses MuJoCo and real-robot data and trains a policy following the GR00T-N1.5 architecture. The system takes language instructions, two RGB images observation and robot state as input and outputs an action chunk comprising robot actions over the next 16 time frames.
 
-
-python dataloader/dataloader.py --input-root datasets/training_dataset_mujoco --output-root datasets_preprocessed/training_dataset_mujoco
-
-<!-- python scripts/gr00t_finetune.py --dataset-path ./datasets_preprocessed/train_dataset_mujoco \
---output_dir outputs/gr00t_finetune_mujoco_full \
---data_config piper \
---batch_size 1 \
---num-gpus 1 -->
-
-
-python scripts/gr00t_finetune.py --dataset-path ./datasets_preprocessed/train_dataset_mujoco \
---output_dir outputs/gr00t_finetune_mujoco_lora \
---data_config piper \
---lora_rank 64 \
---batch_size 1 \
---num-gpus 1
-
-python scripts/gr00t_finetune.py --dataset-path ./datasets_preprocessed/train_dataset_mujoco \
---output_dir outputs/gr00t_finetune_mujoco_lora \
---resume \
---max_steps 50000 \
---data_config piper \
---lora_rank 64 \
---batch_size 1 \
---num-gpus 1
-
-python scripts/inference_service.py --server \
-  --model_path outputs/gr00t_finetune_mujoco_lora/checkpoint-10000 \
-  --embodiment-tag new_embodiment \
-  --data-config piper \
-  --denoising-steps 4
-
-python scripts/eval_policy.py --plot \
-   --embodiment_tag new_embodiment \
-   --model_path outputs/gr00t_finetune_mujoco_lora/checkpoint-10000 \
-   --data_config piper \
-  --dataset_path datasets_preprocessed/val_dataset_mujoco \
-   --modality_keys single_arm gripper  
-
-python scripts/eval_policy.py --trajs 10\
-   --embodiment_tag new_embodiment \
-   --model_path outputs/gr00t_finetune_mujoco_lora/checkpoint-10000 \
-   --data_config piper \
-  --dataset_path datasets_preprocessed/val_dataset_mujoco \
-   --modality_keys single_arm gripper  
+## Inputs
+Since the original GR00T-N1.5 model has been pretrained without depth images, depth images are excluded in this project.
+- Vision
+  - MuJoCo
+    - side_cam_rgb: 640x480
+    - top_cam_rgb: 640x480
+  - Real PiPER
+    - logi_rgb: RGB frames from a Logitech camera
+    - rs_rgb: RGB frames from a RealSense camera
+- Robot State
+  - observation.state: 7-DoF joint positions
+- Language
+  - task instruction text (e.g., “pick the cube and place it in the red bowl” or “pick the cube and place it in the red bowl”)
 
 
-todo list
-1. dataloader : done
-2. choose http vs zmq : http
-3. divide train & val dataset : done
-4. finetune the model with lora and sim data : done
-5. simulation_service.py vs inference_service.py ??? : infernce_service.py
-6. eval_policy.py
-7. eval_simulation.py with integrating mujoco
-8. finetune the model with lora and real world data
-10. eval_real_piperx.py with integrating piper_sdk
+## Model Architecture 
+![Model Architecture Diagram](/media/diagram.png)
 
-Client(Mujoco or Piper) Container
+- Vision Encoder: encodes image streams into visual tokens.
+- Text Tokenizer + VLM (Eagle-2, frozen): converts the instruction into language tokens and provides fused visual-language context.
+- State Encoder: embeds robot state q_t.
+- Action Encoder: embeds a noised action trajectory (a_t … a_{t+H-1}) which are later denoised in DiT Blocks.
+- DiT Blocks (repeated N times): alternating self-attention and cross-attention over state/action tokens, attending to VLM latent features.
+- Action Decoder: predicts motor actions over a horizon H=16; iteration over 4 steps at inference.
 
-pip install requests msgpack
+## Objective and Loss
+- Flow Matching Loss: DiT blocks predicts added noise on the input noised actions. These noises are learned via flow matching loss.
+- Teacher Forcing Loss: Unlike rollout loss, this model is trained with ground-truth actions that are fed to the action encoder. This stabilizes action sequence prediction and speeds up convergence.
+
+## Data Format
+- Episodes are preprocessed to LeRobot format since it is supported by GR00T-N1.5:
+  - data: parquet per episode with observation.state, action, and timestamps.
+  - videos: mp4 per modality.
+  - meta: info.json, episodes.jsonl, tasks.jsonl, modality.json, stats.json.
+- Downsampling and lookahead are configurable in the dataloader.

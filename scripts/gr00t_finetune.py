@@ -107,7 +107,7 @@ class ArgsConfig:
     lora_full_model: bool = False
     """Whether to use the full model for LORA. If False, only the action head will be trained."""
 
-    dataloader_num_workers: int = 12
+    dataloader_num_workers: int = 6
     """Number of workers for data loading per GPU."""
 
     gradient_accumulation_steps: int = 1
@@ -371,7 +371,7 @@ def main(config: ArgsConfig):
         save_strategy="steps",
         save_steps=config.save_steps,
         # evaluation_strategy="no",
-        save_total_limit=10,
+        save_total_limit=100,
         report_to=config.report_to,
         seed=42,
         do_eval=False,

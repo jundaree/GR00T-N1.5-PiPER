@@ -71,6 +71,7 @@ class RobotDataConverter:
         fps: float = 20.0,
         include_depth: bool = False,
         downsample_factor: int = 3,
+        lookahead: int = 0,
     ):
         """
         Initialize the converter.
@@ -81,6 +82,9 @@ class RobotDataConverter:
             fps: Frames per second for video encoding
             include_depth: Whether to include depth images
             downsample_factor: Spatial downsample factor for video scaling
+            lookahead: Frame gap between observation state and action.
+                       action[t] = observation.state[t + lookahead]
+                       For the last `lookahead` frames, actions are set to the last observation.
         """
         self.input_root = Path(input_root)
         self.output_root = Path(output_root)
@@ -89,6 +93,7 @@ class RobotDataConverter:
         self.include_depth = include_depth
         self.downsample_factor = downsample_factor
         self.video_codec_used = None  # Track which codec was successfully used
+        self.lookahead = max(0, int(lookahead))
 
     def convert_all(self):
         """Convert all datasets in the input directory."""
@@ -445,18 +450,29 @@ class RobotDataConverter:
         # Get task description from class attribute
         task_description = self.TASK_DESCRIPTIONS.get(task_name, task_name)
 
-        # Prepare episode data
+        # Prepare action with lookahead shift: action[t] = obs[t + lookahead],
+        # and fill the last `lookahead` entries with the last observation.
+        if self.lookahead <= 0:
+            actions = joint_positions
+        else:
+            if num_frames == 0:
+                actions = joint_positions
+            else:
+                shifted = joint_positions[self.lookahead:]  # obs starting at t+lookahead
+                tail_fill = np.repeat(joint_positions[-1][None, :], self.lookahead, axis=0)
+                actions = np.vstack([shifted, tail_fill])
+
         episode_data = {
-            "observation.state": joint_positions.tolist(),  # Current state
-            "action": joint_positions.tolist(),  # Action (same as state for now)
+            "observation.state": joint_positions.tolist(),
+            "action": actions.tolist(),
             "timestamp": (np.arange(num_frames) / self.fps).tolist(),
-            "annotation.human.action.task_description": [0] * num_frames,  # Task index
+            "annotation.human.action.task_description": [0] * num_frames,
             "task_index": [0] * num_frames,
-            "annotation.human.validity": [1] * num_frames,  # All valid
+            "annotation.human.validity": [1] * num_frames,
             "episode_index": [episode_index] * num_frames,
             "index": list(range(num_frames)),
             "next.reward": [0.0] * num_frames,
-            "next.done": [False] * (num_frames - 1) + [True],  # Last frame is done
+            "next.done": [False] * (num_frames - 1) + [True],
         }
 
         return episode_data
@@ -863,6 +879,12 @@ def main():
         default=3,
         help="Spatial downsample factor for video scaling (e.g., 3 -> width/3, height/3).",
     )
+    parser.add_argument(
+        "--lookahead",
+        type=int,
+        default=0,
+        help="Frame gap between observation state and action. For the last 'lookahead' frames, actions are set to the last observation.",
+    )
 
     args = parser.parse_args()
 
@@ -872,6 +894,7 @@ def main():
         fps=args.fps,
         include_depth=args.include_depth,
         downsample_factor=args.downsample_factor,
+        lookahead=args.lookahead,
     )
 
     if args.task:
