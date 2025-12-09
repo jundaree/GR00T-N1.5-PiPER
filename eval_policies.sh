@@ -2,11 +2,11 @@
 
 # Base configuration
 EMBODIMENT_TAG="new_embodiment"
-DATA_CONFIG="piper"
-DATASET_PATH="datasets_preprocessed/val_dataset_mujoco"
+DATA_CONFIG="piper_real"
+DATASET_PATH="datasets_preprocessed/val_dataset_downsampled_lookahead"
 MODALITY_KEYS="single_arm gripper"
-MODEL_BASE_PATH="outputs/gr00t_finetune_mujoco_lora"
-OUTPUT_FILE="mse_results.txt"
+MODEL_BASE_PATH="outputs/gr00t_finetune_realrobot_lora_downsampled_lookahead"
+OUTPUT_FILE="mse_results_realrobot.txt"
 
 # Clear previous results file
 > ${OUTPUT_FILE}
@@ -28,7 +28,7 @@ echo "Results will be saved to: ${OUTPUT_FILE}"
 echo ""
 
 # Checkpoint array
-checkpoints=(1000 2000 3000 4000 5000 6000 7000 8000 9000 10000)
+checkpoints=(500 1000 1500 2000 2500 3000 3500 4000 4500 5000)
 total_checkpoints=${#checkpoints[@]}
 current=0
 

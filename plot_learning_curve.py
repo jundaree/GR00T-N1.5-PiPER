@@ -6,6 +6,16 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 
+# Larger fonts
+plt.rcParams.update({
+    "font.size": 17,
+    "axes.titlesize": 19,
+    "axes.labelsize": 17,
+    "xtick.labelsize": 15,
+    "ytick.labelsize": 15,
+    "legend.fontsize": 15,
+})
+
 def load_training_curve(trainer_state_path: Path):
     with open(trainer_state_path, "r") as f:
         state = json.load(f)
@@ -51,22 +61,29 @@ def main():
     train_steps, train_losses = load_training_curve(trainer_state_path)
     val_steps, val_losses = load_validation_curve(mse_results_path)
 
-    plt.figure(figsize=(10, 6))
-    if train_steps and train_losses:
-        plt.plot(train_steps, train_losses, label="Training Loss", color="tab:blue", alpha=0.8)
-    if val_steps and val_losses:
-        plt.plot(val_steps, val_losses, label="Validation MSE", color="tab:orange", marker="o", linestyle="--", alpha=0.8)
+    # Two vertically stacked subplots
+    fig, (ax_train, ax_val) = plt.subplots(nrows=2, ncols=1, figsize=(10, 8), sharex=True)
 
-    plt.xlabel("Step")
-    plt.ylabel("Loss")
-    plt.title("Learning Curve")
-    plt.grid(True, linestyle="--", alpha=0.4)
-    plt.legend()
-    plt.tight_layout()
+    if train_steps and train_losses:
+        ax_train.plot(train_steps, train_losses, label="Training Loss", color="tab:blue", alpha=0.9)
+        ax_train.set_ylabel("Training Loss")
+        ax_train.set_title("Training Loss")
+        ax_train.grid(True, linestyle="--", alpha=0.4)
+        ax_train.legend(loc="best")
+
+    if val_steps and val_losses:
+        ax_val.plot(val_steps, val_losses, label="Validation MSE", color="tab:orange", marker="o", linestyle="--", alpha=0.9)
+        ax_val.set_xlabel("Step")
+        ax_val.set_ylabel("Validation MSE")
+        ax_val.set_title("Validation MSE")
+        ax_val.grid(True, linestyle="--", alpha=0.4)
+        ax_val.legend(loc="best")
+
+    fig.tight_layout()
 
     out_path = Path(args.output)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(out_path)
+    fig.savefig(out_path)
     print(f"Saved plot to {out_path}")
 
 if __name__ == "__main__":

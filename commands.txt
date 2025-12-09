@@ -20,6 +20,16 @@ python dataloader/dataloader.py --input-root datasets/training_dataset_mujoco --
 
 python dataloader/dataloader_lookahead.py --input-root datasets/training_dataset_mujoco --output-root datasets_preprocessed/training_dataset_mujoco_downsampled_lookahead --downsample-factor 3 --lookahead 3
 
+python dataloader/dataloader_lookahead.py \
+--input-root datasets/training_dataset_mujoco \
+--output-root datasets_preprocessed/training_dataset_mujoco_downsampled_6_lookahead \
+--downsample-factor 6 --lookahead 3 --fps 10.0
+
+python dataloader/dataloader_lookahead.py \
+--input-root datasets/training_dataset \
+--output-root datasets_preprocessed/training_dataset_realrobot_downsampled_6_lookahead \
+--downsample-factor 6 --lookahead 3 --fps 10.0
+
 
 python dataloader/dataloader_lookahead.py --input-root datasets/training_dataset --output-root datasets_preprocessed/training_dataset_downsampled_lookahead
 
@@ -52,12 +62,23 @@ python scripts/gr00t_finetune.py --dataset-path ./datasets_preprocessed/train_da
 --batch_size 32 \
 --num-gpus 1
 
-python scripts/gr00t_finetune.py --dataset-path ./datasets_preprocessed/train_dataset_downsampled_lookahead \
---output_dir outputs/gr00t_finetune_realrobot_lora_downsampled_lookahead \
+python scripts/gr00t_finetune.py --dataset-path ./datasets_preprocessed/train_dataset_mujoco_downsampled_6_lookahead \
+--output_dir outputs/gr00t_finetune_mujoco_lora_downsampled_6_lookahead \
 --max_steps 5000 \
+--save_steps 500 \
+--data_config piper_mujoco \
+--lora_rank 64 \
+--lora_alpha 64 \
+--batch_size 32 \
+--num-gpus 1
+
+python scripts/gr00t_finetune.py --dataset-path ./datasets_preprocessed/train_dataset_realrobot_downsampled_6_lookahead \
+--output_dir outputs/gr00t_finetune_realrobot_lora_downsampled_6_lookahead \
+--max_steps 4000 \
 --save_steps 500 \
 --data_config piper_real \
 --lora_rank 64 \
+--lora_alpha 64 \
 --batch_size 32 \
 --num-gpus 1
 
@@ -81,6 +102,16 @@ python scripts/eval_policy.py --trajs 10\
   --dataset_path datasets_preprocessed/val_dataset_mujoco \
    --modality_keys single_arm gripper  
 
+
+python plot_learning_curve.py \
+--checkpoint-dir outputs/gr00t_finetune_mujoco_lora_downsampled_6_lookahead \
+--mse-results mse_results.txt \
+--output /workspace/learning_curve_mujoco.png
+
+python plot_learning_curve.py \
+--checkpoint-dir outputs/gr00t_finetune_realrobot_lora_downsampled_lookahead \
+--mse-results mse_results_realrobot.txt \
+--output /workspace/learning_curve_realrobot.png
 
 todo list
 1. dataloader : done
