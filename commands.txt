@@ -13,6 +13,12 @@ docker run -v /home/junhyun/arm/datasets:/workspace/datasets \
 --shm-size="16g" \
 -it arm-gr00t-train-saved
 
+docker run -v /home/junhyun/arm/datasets:/workspace/datasets \
+--name gr00t-piper-temp \
+--gpus all \
+--shm-size="16g" \
+-it gr00t-piper
+
 
 python dataloader/dataloader.py --input-root datasets/training_dataset_mujoco --output-root datasets_preprocessed/training_dataset_mujoco
 
@@ -72,6 +78,29 @@ python scripts/gr00t_finetune.py --dataset-path ./datasets_preprocessed/train_da
 --batch_size 32 \
 --num-gpus 1
 
+Ablation 1
+
+python scripts/gr00t_finetune.py --dataset-path ./datasets_preprocessed/train_dataset_mujoco_downsampled_6_lookahead \
+--output_dir outputs/gr00t_finetune_mujoco_lora_downsampled_6_lookahead_alpha_16 \
+--max_steps 5000 \
+--save_steps 500 \
+--data_config piper_mujoco \
+--lora_rank 64 \
+--batch_size 32 \
+--num-gpus 1
+
+Ablation 2
+
+python scripts/gr00t_finetune.py --dataset-path ./datasets_preprocessed/train_dataset_mujoco_downsampled_lookahead \
+--output_dir outputs/gr00t_finetune_mujoco_lora_downsampled_lookahead_alpha_64 \
+--max_steps 5000 \
+--save_steps 500 \
+--data_config piper_mujoco \
+--lora_rank 64 \
+--lora_alpha 64 \
+--batch_size 32 \
+--num-gpus 1
+
 python scripts/gr00t_finetune.py --dataset-path ./datasets_preprocessed/train_dataset_realrobot_downsampled_6_lookahead \
 --output_dir outputs/gr00t_finetune_realrobot_lora_downsampled_6_lookahead \
 --max_steps 4000 \
@@ -83,9 +112,9 @@ python scripts/gr00t_finetune.py --dataset-path ./datasets_preprocessed/train_da
 --num-gpus 1
 
 python scripts/inference_service.py --server \
-  --model_path outputs/gr00t_finetune_mujoco_lora/checkpoint-10000 \
+  --model_path outputs/gr00t_finetune_mujoco_lora_downsampled_alpha_256/checkpoint-5000 \
   --embodiment-tag new_embodiment \
-  --data-config piper \
+  --data-config piper_mujoco \
   --denoising-steps 4
 
 python scripts/eval_policy.py --plot \
