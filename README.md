@@ -1,4 +1,4 @@
-# MP4 Report (Junhyun Kim)
+# GR00T-N1.5-PiPER
 
 This project preprocesses MuJoCo and real-robot data and trains a policy following the GR00T-N1.5 architecture. The system takes language instructions, two RGB images observation and robot state as input and outputs an action chunk comprising robot actions over the next 16 time frames.
 
