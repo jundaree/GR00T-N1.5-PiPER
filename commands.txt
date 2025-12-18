@@ -135,23 +135,14 @@ python scripts/eval_policy.py --trajs 10\
 python plot_learning_curve.py \
 --checkpoint-dir outputs/gr00t_finetune_mujoco_lora_downsampled_6_lookahead \
 --mse-results mse_results.txt \
---output /workspace/learning_curve_mujoco.png
+--output /workspace/eval_results/learning_curve_mujoco.png
 
 python plot_learning_curve.py \
 --checkpoint-dir outputs/gr00t_finetune_realrobot_lora_downsampled_lookahead \
 --mse-results mse_results_realrobot.txt \
---output /workspace/learning_curve_realrobot.png
+--output /workspace/eval_results/learning_curve_realrobot.png
 
-todo list
-1. dataloader : done
-2. choose http vs zmq : http
-3. divide train & val dataset : done
-4. finetune the model with lora and sim data : done
-5. simulation_service.py vs inference_service.py ??? : infernce_service.py
-6. eval_policy.py
-7. eval_simulation.py with integrating mujoco
-8. finetune the model with lora and real world data
-10. eval_real_piperx.py with integrating piper_sdk
+
 
 Client(Mujoco or Piper) Container
 

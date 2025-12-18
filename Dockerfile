@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel
+FROM pytorch/pytorch:2.7.0-cuda12.8-cudnn9-devel
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONPATH=/workspace:${PYTHONPATH}
 
@@ -29,7 +29,6 @@ RUN pip install flash_attn==2.7.1.post4 -U --force-reinstall --no-build-isolatio
 RUN pip uninstall -y opencv-python opencv-python-headless || true
 RUN rm -rf /usr/local/lib/python3.10/dist-packages/cv2 || true
 RUN pip install opencv-python==4.8.0.74
-RUN pip install --force-reinstall torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 numpy==1.26.4
 COPY getting_started /workspace/getting_started
 COPY scripts /workspace/scripts
 COPY demo_data /workspace/demo_data

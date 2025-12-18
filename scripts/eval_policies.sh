@@ -6,7 +6,7 @@ DATA_CONFIG="piper_real"
 DATASET_PATH="datasets_preprocessed/val_dataset_downsampled_lookahead"
 MODALITY_KEYS="single_arm gripper"
 MODEL_BASE_PATH="outputs/gr00t_finetune_realrobot_lora_downsampled_lookahead"
-OUTPUT_FILE="mse_results_realrobot.txt"
+OUTPUT_FILE="eval_results/mse_results_realrobot.txt"
 
 # Clear previous results file
 > ${OUTPUT_FILE}

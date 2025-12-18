@@ -45,7 +45,7 @@ def main():
                         help="Directory containing trainer_state.json (e.g., outputs/.../checkpoint-5000)")
     parser.add_argument("--mse-results", type=str, required=True,
                         help="Path to mse_results.txt containing validation losses by checkpoint")
-    parser.add_argument("--output", type=str, default="/workspace/learning_curve.png",
+    parser.add_argument("--output", type=str, default="/workspace/eval_results/learning_curve.png",
                         help="Output image path for the plot")
     args = parser.parse_args()
 
